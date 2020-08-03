@@ -1,0 +1,8 @@
+((synopsis "Bindings to Jack Audio API")
+ (author "Mark Fisher")
+ (license "GPLv3")
+ (category sound)
+ (foreign-dependencies "jack")
+ (components (extension jack
+                        (source-dependencies "jack-impl.scm")
+                        (custom-build "build-jack"))))

@@ -1,0 +1,4 @@
+#!/bin/bash
+
+CHICKEN_CSI=${CHICKEN_CSI=csi}
+"$CHICKEN_CSI" -s build-jack.scm "$@"
