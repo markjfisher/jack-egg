@@ -9,4 +9,4 @@
 <#
 
 (define jack-get-version-string (foreign-lambda c-string "jack_get_version_string"))
-
+(define jack-client-name-size (foreign-lambda int "jack_client_name_size"))

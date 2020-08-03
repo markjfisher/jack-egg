@@ -1,0 +1,5 @@
+((author "Mark Fisher") 
+ (synopsis "Bindings to Jack Audio API")
+ (category sound)
+ (license "GPL-3")
+ (test-depends test))
