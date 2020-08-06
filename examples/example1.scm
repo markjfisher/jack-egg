@@ -33,8 +33,6 @@
 (let* ([in-port (jack-port-register client "input" (jack-port-flags->long 'is-input))]
        [out-port (jack-port-register client "output" (jack-port-flags->long 'is-output))]
        [waiter-thread (set-jack-process-scheme-cb client (with-ports simple-copy-cb in-port out-port))])
-  (set! input_port in-port)
-  (set! output_port out-port)
   (let ([r (jack-activate client)])
     (print "activated...")
     (print "in-port : " in-port)
