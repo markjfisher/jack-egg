@@ -20,7 +20,7 @@ jack-egg: CHICKEN Scheme bindings to Jack Audio library
 ## example application
 
     cd examples
-    csc example1.csc -ljack
+    csc example1.csm -ljack
     ./example1
 
 Now hook up the input and output in your favourite jack routing application.
