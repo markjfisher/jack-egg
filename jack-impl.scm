@@ -9,20 +9,40 @@
 
 ;; external code
 #>
-#include "jack/jack.h"
-#include "jack/types.h"
-#include "jack/session.h"
+#include <jack/jack.h>
+#include <jack/types.h>
+#include <jack/session.h>
+#include <nanomsg/nn.h>
+#include <nanomsg/pipeline.h>
+#include <nanomsg/ipc.h>
 
 int jack_callback_fd = -1;
 int pipe_callback (jack_nframes_t nframes, void *arg) {
   if (jack_callback_fd >= 0) {
-    int size = sizeof(jack_nframes_t);
     int ignored;
-    char frames[size + 1];
-    snprintf(frames, size + 1, "%d\n", nframes);
+    char frames[20];
+    sprintf(frames, "%d\n", nframes);
+    int size = strlen(frames);
     ignored = write(jack_callback_fd, frames, size);
   }
 }
+
+int out_sock = -1;
+int nano_callback (jack_nframes_t nframes, void *arg)
+{
+  // fprintf(stdout, "nano_callback sending to out: %d, n: %d\n", out_sock, nframes);
+  char frames[5];
+
+  if (out_sock == -1) {
+    out_sock = nn_socket(AF_SP, NN_PUSH);
+    nn_connect(out_sock, "ipc://jack-cb.ipc"); // TODO: needs unique name
+  }
+
+  sprintf(frames, "%d", nframes);
+  nn_send(out_sock, frames, strlen(frames), 0);
+  // nn_shutdown(out_sock, 0);
+}
+
 <#
 
 (define-external jack_callback_fd int -1)
@@ -40,6 +60,16 @@ int pipe_callback (jack_nframes_t nframes, void *arg) {
             (loop))
           (close-input-port p-in))))))
 
+(define (make-nano-thread client handler)
+  (let ([socket (nn-socket 'pull)])
+    (print "binding to socket: " socket ", fd: " (nn-socket-rcvfd socket))
+    (nn-bind socket "ipc://jack-cb.ipc")
+    (let loop ()
+      (let ([msg (nn-recv socket)])
+        (handler client (string->number msg))
+        #; (nn-close socket)
+        (loop)))))
+
 (define (set-jack-process-scheme-cb client handler)
   (when (eq? handler jack-process-scheme-cb)
     (foreign-code "close(jack_callback_fd);"))
@@ -50,6 +80,14 @@ int pipe_callback (jack_nframes_t nframes, void *arg) {
      C_return(my_return);
     ") client)
   (thread-start! (make-thread (cut make-waiter-thread client handler) "jack-waiter-thread")))
+
+(define (set-jack-nano-scheme-cb client handler)
+  ((foreign-lambda* int ((c-pointer client))
+     "int my_return;
+     my_return = jack_set_process_callback (client, nano_callback, 0);
+     C_return(my_return);
+    ") client)
+  (thread-start! (make-thread (cut make-nano-thread client handler) "jack-nano-thread")))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

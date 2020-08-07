@@ -2,7 +2,7 @@
  (author "Mark Fisher")
  (license "GPL-3")
  (category sound)
- (foreign-dependencies "jack")
+ (foreign-dependencies "jack" "nanomsg")
  (test-dependencies test)
  (components (extension jack
                         (source-dependencies "jack-impl.scm")

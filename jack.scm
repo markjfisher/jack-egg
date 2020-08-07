@@ -23,6 +23,7 @@
      jack-last-frame-time
      jack-cpu-load
      set-jack-process-scheme-cb
+     set-jack-nano-scheme-cb
      jack-port-register
      jack-activate
      jack-port-by-name
@@ -36,5 +37,6 @@
   (import (chicken process))
   (import (chicken file posix))
   (import foreigners)
+  (import nanomsg)
 
   (include "jack-impl.scm"))

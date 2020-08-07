@@ -20,12 +20,15 @@
             (error (format "Command failed with exit code ~s, set $~a" exit var))))))
 
 (define csc (get-environment-variable "CHICKEN_CSC"))
-(define jack-cflags (library-flags "JACK_CFLAGS" "(pkg-config --cflags jack || echo '')"))
-(define jack-ldlibs (library-flags "JACK_LDLIBS" "(pkg-config --libs jack || echo '-ljack')"))
+(define jack-cflags (library-flags "JACK_CFLAGS" (string-chomp "(pkg-config --cflags jack || echo '')")))
+(define jack-ldlibs (library-flags "JACK_LDLIBS" (string-chomp "(pkg-config --libs jack || echo '-ljack')")))
+(define nanomsg-cflags (library-flags "NANOMSG_CFLAGS" (string-chomp "(pkg-config --cflags nanomsg || echo '')")))
+(define nanomsg-ldlibs (library-flags "NANOMSG_LDLIBS" (string-chomp "(pkg-config --libs nanomsg || echo '-lnanomsg')")))
 
-(define args (list csc jack-cflags jack-ldlibs))
+(define args (list csc jack-cflags jack-ldlibs nanomsg-cflags nanomsg-ldlibs))
+
+;; need to match each args entry with a format entry
 (define cmdline
-  (string-append (apply format "~a -C ~a -L ~a " (map qs args))
+  (string-append (apply format "~a -C ~a -L ~a -C ~a -L ~a " (map qs args))
                  (string-intersperse (map qs (command-line-arguments)) " ")))
-
 (system cmdline)
