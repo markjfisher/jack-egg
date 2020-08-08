@@ -17,7 +17,6 @@
 
 (define float-size (foreign-type-size "float"))
 
-;; even using direct c, this is too "noisy". the pipe-mechanism is too slow for RT processing.
 (define (simple-copy-cb nframes in-port out-port)
   ;; (print "got n: " nframes ", in: " in-port ", out: " out-port)
   #;((foreign-lambda* void ((int n) (c-pointer in_port) (c-pointer out_port))
@@ -40,7 +39,6 @@
 
 (let* ([in-port (jack-port-register client "input" (jack-port-flags->long 'is-input))]
        [out-port (jack-port-register client "output" (jack-port-flags->long 'is-output))]
-       ;; [waiter-thread (set-jack-process-scheme-cb client (with-ports simple-copy-cb in-port out-port))]
        [waiter-thread (set-jack-nano-scheme-cb client (with-ports simple-copy-cb in-port out-port))]
        )
   (let ([r (jack-activate client)])
@@ -48,6 +46,5 @@
     (print "in-port : " in-port)
     (print "out-port: " out-port)
     (print "activate: " r)
+    (print "thread state: " (thread-state waiter-thread))
     (thread-join! waiter-thread)))
-
-(thread-sleep! 60)

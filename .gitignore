@@ -8,3 +8,4 @@
 salmonella.log
 examples/*.c
 examples/example1
+examples/sine-wave
