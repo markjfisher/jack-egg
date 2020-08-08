@@ -5,5 +5,5 @@
  (foreign-dependencies "jack" "nanomsg")
  (test-dependencies test)
  (components (extension jack
-                        (source-dependencies "jack-impl.scm")
+                        (source-dependencies "jack-ipc.scm" "jack-client.scm" "jack-enums.scm")
                         (custom-build "build-jack"))))

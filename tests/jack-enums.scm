@@ -2,12 +2,7 @@
 
 (import (jack))
 
-(test-begin "jack")
-
-(test-group
- "simple jack functions"
- (test-assert "version string is not empty" (string<? "" (jack-get-version-string)))
- (test-assert "client name size is not 0" (> (jack-client-name-size) 0)))
+(test-begin "jack-enums")
 
 (test-group
  "int->jack-options"

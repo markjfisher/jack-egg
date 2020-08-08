@@ -22,7 +22,7 @@
      jack-frames-since-cycle-start
      jack-last-frame-time
      jack-cpu-load
-     set-jack-nano-scheme-cb
+     set-jack-callback
      jack-port-register
      jack-activate
      jack-port-by-name
@@ -34,7 +34,6 @@
   (import srfi-18)
   (import (chicken base))
   (import (chicken format))
-  (import (chicken random))
   (import (chicken foreign))
   (import (chicken process))
   (import (chicken process-context posix))
@@ -42,6 +41,7 @@
   (import (chicken file posix))
   (import foreigners)
   (import nanomsg)
-  (import simple-loops)
 
-  (include "jack-impl.scm"))
+  (include "jack-ipc.scm")
+  (include "jack-enums.scm")
+  (include "jack-client.scm"))

@@ -5,8 +5,8 @@
 (import jack)
 (import mathh mathh-consts)
 
-(define results (jack-client-open "sin-maker" (jack-options->int 'no-options)))
-(define client (cadr results))
+(define-values (status client)
+  (jack-client-open "sine-wave"))
 
 (define float-size 4) ;; normally (foreign-type-size "float") but hard-coded for repl
 
@@ -48,6 +48,6 @@
 
 (let* ([out-port1 (jack-port-register client "output1" (jack-port-flags->long 'is-output))]
        [out-port2 (jack-port-register client "output2" (jack-port-flags->long 'is-output))]
-       [waiter-thread (set-jack-nano-scheme-cb client (with-ports sine-wave out-port1 out-port2))])
+       [waiter-thread (set-jack-callback client (with-ports sine-wave out-port1 out-port2))])
   (jack-activate client)
   (thread-join! waiter-thread))

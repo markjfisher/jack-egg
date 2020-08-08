@@ -2,6 +2,9 @@
 
 jack-egg: CHICKEN Scheme bindings to Jack Audio library
 
+Currently needs nanomsg installed, as it uses this to communicate between
+the jack server and the scheme callback procedure.
+
 ## building
 
     chicken-install
@@ -12,17 +15,17 @@ jack-egg: CHICKEN Scheme bindings to Jack Audio library
 
 ## example session
 
-    #;1> (define results (jack-client-open "chicken" (jack-options->int 'no-options)))
-    #;2> (define client (cadr results))
-    #;3> (jack-get-sample-rate client)
+    #> (import jack)
+    #> (define-values (status client)
+         (receive (jack-client-open "chicken" (jack-options->int 'no-options))))
+    #> (jack-get-sample-rate client)
     48000
 
-## example application
+## example applications
 
     cd examples
-    csc example1.csm -ljack
+    csc example1.scm -ljack
     ./example1
 
-Now hook up the input and output in your favourite jack routing application.
-Note, this is quite "noisy" illustrating the pipe communication method is not
-RT capable.
+    csc sine-wave.scm -ljack
+    ./sine-wave
