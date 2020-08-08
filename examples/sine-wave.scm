@@ -26,7 +26,7 @@
   (lambda (_ nframes)
     (handler nframes p1 p2)))
 
-;; returns every nth element of clist up to max values
+;; returns every nth element of clist up to max values, dropping first "after" elements
 (define (every-n n after clist max)
   (let loop ([acc (make-vector max)] [rest (drop clist after)] [i 0])
     (if (= max i)
@@ -34,20 +34,20 @@
         (begin (vector-set! acc i (first rest))
                (loop acc (drop rest n) (add1 i))))))
 
-(define (sin-wave nframes out-port1 out-port2)
+(define (sine-wave nframes out-port1 out-port2)
   (let* ([out-buff1 (jack-port-get-buffer out-port1 nframes)]
          [out-buff2 (jack-port-get-buffer out-port2 nframes)]
          [p1data (every-n 1 phase-1 sine-data nframes)] ;; different frequencies
          [p2data (every-n 3 phase-2 sine-data nframes)])
     (set! phase-1 (remainder (+ nframes phase-1) table-size))
     (set! phase-2 (remainder (+ (* 3 nframes) phase-2) table-size))
-    (move-memory! (location (apply f32vector p1data)) out-buff1 (* nframes float-size))
-    (move-memory! (location (apply f32vector p2data)) out-buff2 (* nframes float-size))
+    (move-memory! (location (list->f32vector p1data)) out-buff1 (* nframes float-size))
+    (move-memory! (location (list->f32vector p2data)) out-buff2 (* nframes float-size))
     )
   0)
 
 (let* ([out-port1 (jack-port-register client "output1" (jack-port-flags->long 'is-output))]
        [out-port2 (jack-port-register client "output2" (jack-port-flags->long 'is-output))]
-       [waiter-thread (set-jack-nano-scheme-cb client (with-ports sin-wave out-port1 out-port2))])
+       [waiter-thread (set-jack-nano-scheme-cb client (with-ports sine-wave out-port1 out-port2))])
   (jack-activate client)
   (thread-join! waiter-thread))
