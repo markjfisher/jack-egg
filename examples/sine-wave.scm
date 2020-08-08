@@ -6,6 +6,8 @@
 (import foreigners)
 (import jack)
 (import mathh mathh-consts)
+(import loop)
+(import generic-helpers)
 
 #>
 #include <stdio.h>
@@ -89,10 +91,10 @@ process_cb (jack_nframes_t nframes, void *arg)
   (right-phase sin-table-right-phase sin-table-right-phase-set!))
 
 (define (sin-data length peak)
-  (apply f32vector
+  (apply circular-list
          (map (lambda (i) (* peak (sin (* (/ i length) 2.0 pi))) ) (list-tabulate length values))))
 
-(define table-size 64)
+(define table-size 200)
 
 (define table
   (make-table table-size (sin-data table-size 0.2) 0 0))
@@ -101,29 +103,32 @@ process_cb (jack_nframes_t nframes, void *arg)
   (lambda (_ nframes)
     (handler nframes p1 p2)))
 
+;; returns every nth element of clist up to max values
+(define (every-n n after clist max)
+  (let loop ([acc (make-vector max)] [rest (drop clist after)] [i 0])
+    (if (= max i)
+        (vector->list acc)
+        (begin (vector-set! acc i (first rest))
+               (loop acc (drop rest n) (add1 i))))))
+
 (define (sin-wave nframes out-port1 out-port2)
-  #;(print "in sin-wave")
-  (let ([out-buff1 (jack-port-get-buffer out-port1 nframes)]
-        [out-buff2 (jack-port-get-buffer out-port2 nframes)]
-        [cl (apply circular-list (f32vector->list (sin-table-data table)))]
-        [phase-1 (remainder (+ 1 (sin-table-left-phase table)) table-size)]
-        [phase-2 (remainder (+ 3 (sin-table-right-phase table)) table-size)])
-    (sin-table-left-phase-set! table phase-1)
-    (sin-table-right-phase-set! table phase-2)
-    (let*-values ([(_ data-1) (split-at cl phase-1)]
-                  [(_ data-2) (split-at cl phase-2)]
-                  [(phased-sin-data-1) (apply f32vector (take data-1 nframes))]
-                  [(phased-sin-data-2) (apply f32vector (take data-2 nframes))])
-      #;(copy_data phased-sin-data-1 out-buff1 nframes)
-      #;(copy_data phased-sin-data-2 out-buff2 nframes)
-      (move-memory! (location phased-sin-data-1) out-buff1 (* nframes float-size))
-      (move-memory! (location phased-sin-data-2) out-buff2 (* nframes float-size))))
+  (let* ([out-buff1 (jack-port-get-buffer out-port1 nframes)]
+         [out-buff2 (jack-port-get-buffer out-port2 nframes)]
+         [p1 (sin-table-left-phase table)]
+         [p2 (sin-table-right-phase table)]
+         [p1data (every-n 1 p1 (sin-table-data table) nframes)]
+         [p2data (every-n 3 p2 (sin-table-data table) nframes)])
+    (sin-table-left-phase-set! table (remainder (+ nframes p1) table-size))
+    (sin-table-right-phase-set! table (remainder (+ (* 3 nframes) p2) table-size))
+    (move-memory! (location (apply f32vector p1data)) out-buff1 (* nframes float-size))
+    (move-memory! (location (apply f32vector p2data)) out-buff2 (* nframes float-size))
+    )
   0)
 
 (define-foreign-variable output_port1 (c-pointer "jack_port_t") "output_port1")
 (define-foreign-variable output_port2 (c-pointer "jack_port_t") "output_port2")
 
-(define (set-jack-nano-scheme-cb2 client handler)
+(define (set-jack-nano-scheme-cb2 client)
   ((foreign-lambda* int ((c-pointer client))
      "int my_return;
      my_return = jack_set_process_callback (client, process_cb, 0);
@@ -133,7 +138,9 @@ process_cb (jack_nframes_t nframes, void *arg)
 
 (let* ([out-port1 (jack-port-register client "output1" (jack-port-flags->long 'is-output))]
        [out-port2 (jack-port-register client "output2" (jack-port-flags->long 'is-output))]
-       [waiter-thread (set-jack-nano-scheme-cb2 client (with-ports sin-wave out-port1 out-port2))])
+       ;; [waiter-thread (set-jack-nano-scheme-cb2 client)]
+       [waiter-thread (set-jack-nano-scheme-cb client (with-ports sin-wave out-port1 out-port2))]
+       )
   (print "setting ports to 1: " out-port1 ", 2: " out-port2)
   (set! output_port1 out-port1)
   (set! output_port2 out-port2)
