@@ -1,3 +1,6 @@
+;; jack-ipc.scm
+;; -*- mode: Scheme; tab-width: 2; -*- ;;
+
 #>
 #include <unistd.h>
 #include <jack/jack.h>

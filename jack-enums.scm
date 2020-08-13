@@ -1,3 +1,6 @@
+;; jack-enums.scm
+;; -*- mode: Scheme; tab-width: 2; -*- ;;
+
 (define-foreign-enum-type (jack-options int)
   (jack-options->int int->jack-options)
   ((no-options jack-options/no-options) JackNullOption)
